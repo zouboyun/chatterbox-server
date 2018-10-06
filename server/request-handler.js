@@ -13,10 +13,19 @@ this file and include it in basic-server.js so that it actually works.
 **************************************************************/
 
 var messages = [{
-          username: 'Mel Brooks',
-          text: 'It\'s good to be the king',
-          roomname: 'lobby'
-        }];
+  username: 'Mel Brooks',
+  text: 'It\'s good to be the king',
+  roomname: 'lobby'
+}];
+
+var objectId = 0;
+
+var defaultCorsHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'access-control-allow-headers': 'content-type, accept, X-Parse-Application-Id, X-Parse-REST-API-Key',
+  'access-control-max-age': 10 // Seconds.
+};
 
 var requestHandler = function(request, response) {
   
@@ -29,11 +38,11 @@ var requestHandler = function(request, response) {
   if (request.method === "GET") {
     if (request.url.includes('/classes/messages')) {
       response.writeHead(statusCode, headers);
-      response.end(JSON.stringify({results: messages}))    
+      response.end(JSON.stringify({results: messages}));
     } else {
       statusCode = 404;
       response.writeHead(statusCode, headers);
-      response.end('OOPS 404!') 
+      response.end('OOPS 404!');
     }
   
   } else if (request.method === "POST") {
@@ -46,16 +55,21 @@ var requestHandler = function(request, response) {
       // at this point, `body` has the entire request body stored in it as a string
       body = JSON.parse(body);
       body.createdAt = new Date();
+      body.objectId = 'ID' + objectId.toString();
+      objectId++;
+      console.log(body.objectId)
       messages.unshift(body);
       response.writeHead(statusCode, headers);
-      response.end(JSON.stringify(body));
+      response.end(JSON.stringify({
+        createdAt: body.createdAt,
+        objectId: body.objectId}));
     });
     
   } else if (request.method === "OPTIONS") {
     headers['Allow'] = 'GET, POST, PUT, DELETE, OPTIONS';
     response.writeHead(statusCode, headers);
-    response.end(JSON.stringify({results: messages})) 
-  };
+    response.end(JSON.stringify({results: messages}));
+  }
   
   // Request and Response come from node's http module.
   //
@@ -108,11 +122,5 @@ var requestHandler = function(request, response) {
 //
 // Another way to get around this restriction is to serve you chat
 // client from this domain by setting up static file serving.
-var defaultCorsHeaders = {
-  'access-control-allow-origin': '*',
-  'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'access-control-allow-headers': 'content-type, accept, X-Parse-Application-Id, X-Parse-REST-API-Key',
-  'access-control-max-age': 10 // Seconds.
-};
 
 module.exports.requestHandler = requestHandler;
